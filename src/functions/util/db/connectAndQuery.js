@@ -44,10 +44,22 @@ const config = {
     }
 */
 
-const connectAndQuery = async () => {
+const connect = async () => {
   try {
+    console.log("Connecting...");
     var sqlConnection = await sql.connect(config);
+    console.log(
+      `Connected to SQL Database: ${process.env.DATABASE} @ Server: ${process.env.SERVER_NAME}`
+    );
 
+    return sqlConnection;
+  } catch (err) {
+    console.error(err.message);
+  }
+};
+
+const queryAllRecords = async (sqlConnection) => {
+  try {
     console.log("Reading rows from the Table...");
     var resultSet = await sqlConnection.request().query(`SELECT * FROM Course`);
 
@@ -72,11 +84,46 @@ const connectAndQuery = async () => {
     sqlConnection.close();
 
     return resultSet;
-  } catch (err) {
-    console.error(err.message);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const queryRecordsByPK = async (sqlConnection, pk) => {
+  try {
+    console.log("Reading rows from the Table...");
+    var resultSet = await sqlConnection
+      .request()
+      .query(`SELECT * FROM Course WHERE CourseID = ${pk}`);
+
+    console.log(`${resultSet.recordset.length} rows returned.`);
+    console.log(resultSet);
+
+    // output column headers
+    var columns = "";
+    for (var column in resultSet.recordset.columns) {
+      //   console.log(`${column}\t`);
+      columns += `${column}\t`;
+    }
+    console.log(columns);
+    // console.log("%s\t", columns.substring(0, columns.length - 2));
+
+    // ouput row contents from default record set
+    resultSet.recordset.forEach((row) => {
+      console.log(`${row.CourseID}\t${row.CourseName}\t${row.Rating}`);
+    });
+
+    // close connection only when we're certain application is finished
+    sqlConnection.close();
+
+    return resultSet;
+  } catch (error) {
+    console.error(error);
   }
 };
 
 module.exports = {
-  connectAndQuery,
+  connect,
+  queryAllRecords,
+  queryRecordsByPK,
 };

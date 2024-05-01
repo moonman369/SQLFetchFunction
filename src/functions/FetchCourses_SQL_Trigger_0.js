@@ -1,5 +1,9 @@
 const { app } = require("@azure/functions");
-const { connectAndQuery } = require("./util/db/connectAndQuery");
+const {
+  connect,
+  queryAllRecords,
+  queryRecordsByPK,
+} = require("./util/db/connectAndQuery");
 
 app.http("FetchCourses_SQL_Trigger_0", {
   methods: ["GET", "POST"],
@@ -9,13 +13,27 @@ app.http("FetchCourses_SQL_Trigger_0", {
 
     const name = request.query.get("name") || (await request.text()) || "world";
 
-    const result = await connectAndQuery();
+    const sqlConnection = await connect();
 
-    return {
-      body: JSON.stringify({
-        message: `Hello, ${name}!`,
-        resultSet: result,
-      }),
-    };
+    if (request.query.get("id") || request.query.get("pk")) {
+      const primaryKey = request.query.get("id") || request.query.get("pk");
+      const result = await queryRecordsByPK(sqlConnection, primaryKey);
+
+      return {
+        body: JSON.stringify({
+          message: `Hello, ${name}!`,
+          resultSet: result,
+        }),
+      };
+    } else {
+      const result = await queryAllRecords(sqlConnection);
+
+      return {
+        body: JSON.stringify({
+          message: `Hello, ${name}!`,
+          resultSet: result,
+        }),
+      };
+    }
   },
 });
